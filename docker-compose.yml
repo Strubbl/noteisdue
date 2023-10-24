@@ -1,0 +1,33 @@
+version: '3.1'
+services:
+  db:
+    image: 'postgres:16'
+    env_file:
+      - docker/env
+    networks:
+      - postgres-network
+    volumes:
+      - ./docker/db-data/:/var/lib/postgresql/data/
+      - ./docker/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noteisdue"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file:
+      - docker/env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - postgres-network
+
+networks:
+  postgres-network:
+    driver: bridge
+
